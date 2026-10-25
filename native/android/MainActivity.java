@@ -37,7 +37,7 @@ public final class MainActivity extends Activity {
     Button home=new Button(this);home.setText("← ENow");home.setOnClickListener(v->web.loadUrl(HOME));bar.addView(home);
     address=new TextView(this);address.setTextColor(Color.rgb(33,91,67));address.setTextSize(12);address.setMaxLines(2);bar.addView(address,new LinearLayout.LayoutParams(0,-2,1));root.addView(bar);
     web=new WebView(this);root.addView(web,new LinearLayout.LayoutParams(-1,0,1));web.setBackgroundColor(Color.rgb(248,250,246));
-    WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(true);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);settings.setSupportMultipleWindows(true);settings.setJavaScriptCanOpenWindowsAutomatically(false);settings.setUserAgentString(settings.getUserAgentString()+" ENow/1.1.0");
+    WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(true);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);settings.setSupportMultipleWindows(true);settings.setJavaScriptCanOpenWindowsAutomatically(false);settings.setUserAgentString(settings.getUserAgentString()+" ENow/1.1.1");
     CookieManager.getInstance().setAcceptThirdPartyCookies(web,false);
     web.setWebViewClient(new WebViewClient(){
       @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req){return navigate(req.getUrl());}
@@ -62,7 +62,7 @@ public final class MainActivity extends Activity {
     web.setDownloadListener((url,ua,disposition,type,size)->{if("https".equals(Uri.parse(url).getScheme())){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)));}catch(Exception ignored){}}});
     if(state==null||web.restoreState(state)==null)web.loadUrl(HOME);
   }
-  private boolean paymentHost(String host){return "cash.app".equals(host)||"venmo.com".equals(host)||"www.paypal.com".equals(host)||"app.chime.com".equals(host);}
+  private boolean paymentHost(String host){return "cash.app".equals(host)||"venmo.com".equals(host)||"account.venmo.com".equals(host)||"www.paypal.com".equals(host)||"app.chime.com".equals(host)||"www.chime.com".equals(host);}
   private boolean navigate(Uri uri){
     String scheme=uri.getScheme(),host=uri.getHost();
     if("https".equals(scheme)){

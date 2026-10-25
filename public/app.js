@@ -1,4 +1,6 @@
 import {initDonations} from './donation.js';
+import {initInstall} from './install.js';
+initInstall();
 const $=id=>document.getElementById(id);
 const api=window.ENOW_API||'';
 // Copy a stable, public URL, without Facebook tracking parameters or app links.

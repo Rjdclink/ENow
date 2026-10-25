@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="icon192.png"><meta name="theme-color" content="#eef5ef">
-  <meta name="description" content="E-Now Shopping: search by text or photo, compare prices, filter finds, save favorites and buy from sellers. Free, no signup. Download the Android app.">
+  <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ENow"><link rel="apple-touch-icon" href="icon192.png"><meta name="theme-color" content="#eef5ef">
+  <meta name="description" content="E-Now Shopping: search by text or photo, compare prices, filter finds, save favorites and buy from sellers. Free, no signup. Install on phones or computers.">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <title>E-Now Shopping | Photo Search &amp; Price Comparison</title>
   <link rel="canonical" href="https://enow-shopping.eager-guppy-9296.chatgpt.site/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="E-Now Shopping">
   <meta property="og:title" content="E-Now Shopping | Photo Search &amp; Price Comparison">
-  <meta property="og:description" content="E-Now Shopping: search by text or photo, compare prices, filter finds, save favorites and buy from sellers. Free, no signup. Download the Android app.">
+  <meta property="og:description" content="E-Now Shopping: search by text or photo, compare prices, filter finds, save favorites and buy from sellers. Free, no signup. Install on phones or computers.">
   <meta property="og:url" content="https://enow-shopping.eager-guppy-9296.chatgpt.site/">
   <meta property="og:image" content="https://enow-shopping.eager-guppy-9296.chatgpt.site/icon512.png">
   <meta property="og:image:secure_url" content="https://enow-shopping.eager-guppy-9296.chatgpt.site/icon512.png">
@@ -20,7 +20,7 @@
   <meta property="og:image:alt" content="ENow shopping search logo">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="E-Now Shopping | Photo Search &amp; Price Comparison">
-  <meta name="twitter:description" content="E-Now Shopping: search by text or photo, compare prices, filter finds, save favorites and buy from sellers. Free, no signup. Download the Android app.">
+  <meta name="twitter:description" content="E-Now Shopping: search by text or photo, compare prices, filter finds, save favorites and buy from sellers. Free, no signup. Install on phones or computers.">
   <meta name="twitter:image" content="https://enow-shopping.eager-guppy-9296.chatgpt.site/icon512.png">
   <script type="application/ld+json">
   {
@@ -67,7 +67,7 @@
           "Save favorite offers in your browser",
           "Buy directly from sellers",
           "Free access without signup",
-          "Downloadable Android app",
+          "Installable app for iPhone, iPad, Android, Windows and Mac with supported browsers",
           "Optional donations via Cash App, Venmo, Chime or PayPal"
         ]
       }
@@ -83,7 +83,7 @@
   <div class="ambient" aria-hidden="true"></div>
   <header class="topbar">
     <a class="wordmark" href="./" aria-label="ENow home"><span class="logo">e<span>↗</span></span><span>enow<span class="logo-period">.</span></span></a>
-    <nav aria-label="Main navigation"><button id="saved-toggle" class="quiet-button"><svg viewBox="0 0 24 24"><path d="m12 20-8-8a5 5 0 0 1 8-6 5 5 0 0 1 8 6Z"/></svg>Saved<span id="saved-count" hidden></span></button><a class="app-download" href="downloads/ENow.apk" download>Get the app ↗</a><button id="how-toggle" class="how-button">How it works <span>↗</span></button></nav>
+    <nav aria-label="Main navigation"><button id="saved-toggle" class="quiet-button"><svg viewBox="0 0 24 24"><path d="m12 20-8-8a5 5 0 0 1 8-6 5 5 0 0 1 8 6Z"/></svg>Saved<span id="saved-count" hidden></span></button><button id="install-app" class="app-install" type="button" aria-label="Install ENow app"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg><span data-install-label>Install app</span></button><button id="how-toggle" class="how-button">How it works <span>↗</span></button></nav>
   </header>
   <main>
     <section class="hero" aria-labelledby="hero-title">
@@ -129,7 +129,7 @@
     <section class="about-enow" aria-labelledby="about-title">
       <h2 id="about-title">One search. More possibilities.</h2>
       <p>E-Now Shopping (ENow) finds products across categories using text or photos. Compare store prices; filter by budget, condition and country; view local currencies, available shipping costs and source dates; save favorites; and buy directly from sellers.</p>
-      <p>Free, no signup. <a href="downloads/ENow.apk" download>Download the Android app</a>. Optional Cash App, Venmo, Chime and PayPal donations help keep ENow running.</p>
+      <p>Free, no signup. Install on iPhone, iPad, Android, Windows or Mac using the Install app button above and a supported browser. Optional Cash App, Venmo, Chime and PayPal donations help keep ENow running.</p>
     </section>
     <div class="bottom-note"><span class="brand-star">✳</span><p>A world of stores.<br><strong>A simpler way to shop.</strong></p></div>
     <section class="share-site" aria-label="Share ENow">
@@ -140,6 +140,7 @@
   </main>
   <footer><a class="footer-logo" href="./">enow.</a><span>Find your thing. Keep your change.</span><button id="privacy-toggle" class="text-button">Privacy & search</button></footer>
   <dialog id="info-dialog"><button id="dialog-close" class="dialog-close" aria-label="Close">×</button><div id="dialog-content"></div></dialog>
+  <dialog id="install-dialog" class="install-dialog" aria-labelledby="install-title"><button id="install-close" class="dialog-close" aria-label="Close install instructions">×</button><div id="install-content"></div></dialog>
   <dialog id="donation-dialog" class="donation-dialog" aria-labelledby="donation-title">
     <button id="donation-close" class="dialog-close" aria-label="Back to shopping">×</button>
     <div id="donation-content"></div>
