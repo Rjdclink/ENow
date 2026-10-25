@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="icon192.png"><meta name="theme-color" content="#eef5ef"><meta name="description" content="Describe it or share a photo. ENow searches across online stores to help you find a better price.">
+  <title>ENow — A better way to find it.</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Manrope:wght@400;500;600;650;700;750;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css"><script src="config.js"></script><script type="module" src="app.js"></script>
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="wordmark" href="./" aria-label="ENow home"><span class="logo">e<span>↗</span></span><span>enow<span class="logo-period">.</span></span></a>
+    <nav aria-label="Main navigation"><button id="saved-toggle" class="quiet-button"><svg viewBox="0 0 24 24"><path d="m12 20-8-8a5 5 0 0 1 8-6 5 5 0 0 1 8 6Z"/></svg>Saved<span id="saved-count" hidden></span></button><a class="app-download" href="downloads/ENow.apk" download>Get the app ↗</a><button id="how-toggle" class="how-button">How it works <span>↗</span></button></nav>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="eyebrow"><span class="spark">✳</span> LESS SEARCHING. BETTER FINDS.</div>
+      <h1 id="hero-title">Your next great find.<br><span>For a little less.</span></h1>
+      <p class="intro">Big stores. Small shops. One simple search.</p>
+      <div class="search-card" id="drop-zone">
+        <div class="search-heading"><span class="tiny-orbit" aria-hidden="true">✦</span><h2>What are we looking for today?</h2></div>
+        <form id="search-form">
+          <label class="sr-only" for="query">What would you like to buy?</label>
+          <textarea id="query" rows="2" maxlength="240" placeholder="A new pair of headphones, those sneakers you love…" required></textarea>
+          <div id="photo-preview" class="photo-preview" hidden><img id="photo-thumbnail" alt="Your uploaded item"><span id="photo-name"></span><button type="button" id="remove-photo" aria-label="Remove photo">×</button></div>
+          <div class="search-actions">
+            <div class="secondary-actions"><button class="photo-button" type="button" id="photo-button"><svg viewBox="0 0 24 24"><path d="M4 6h4l2-3h4l2 3h4v14H4Z"/><circle cx="12" cy="12" r="4"/></svg><span>Add a photo</span></button><span class="action-divider"></span><button type="button" class="refine-button" id="refine-toggle" aria-expanded="false" aria-controls="refine"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 17h18"/><circle cx="8" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></svg><span>Refine</span></button></div>
+            <button class="search-button" type="submit" id="search-button"><span>Find it for less</span><span class="button-arrow">↗</span></button>
+          </div>
+          <div id="refine" class="refine-panel" hidden>
+            <label>Shopping in<select id="country"><option value="US|USD">United States · USD</option><option value="GB|GBP">United Kingdom · GBP</option><option value="CA|CAD">Canada · CAD</option><option value="AU|AUD">Australia · AUD</option><option value="NZ|NZD">New Zealand · NZD</option><option value="DE|EUR">Germany · EUR</option><option value="FR|EUR">France · EUR</option><option value="IT|EUR">Italy · EUR</option><option value="ES|EUR">Spain · EUR</option><option value="NL|EUR">Netherlands · EUR</option><option value="IN|INR">India · INR</option><option value="JP|JPY">Japan · JPY</option><option value="SG|SGD">Singapore · SGD</option><option value="BR|BRL">Brazil · BRL</option><option value="MX|MXN">Mexico · MXN</option><option value="ZA|ZAR">South Africa · ZAR</option><option value="CH|CHF">Switzerland · CHF</option><option value="AE|AED">UAE · AED</option></select></label>
+            <label>Condition<select id="condition"><option value="any">Any condition</option><option value="new">New</option><option value="used">Used</option><option value="refurbished">Refurbished</option></select></label>
+            <label>Budget<input id="budget" type="number" min="0.01" step="0.01" placeholder="No limit"></label>
+          </div>
+        </form>
+        <input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif" hidden>
+      </div>
+      <div class="under-search"><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 5-5 13 0 18 5-5 5-13 0-18Z"/></svg> Search beyond your usual stores</span><span class="dot">·</span><span>No sign-up. Just good finds.</span></div>
+      <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+      <button id="cancel-search" class="text-button" hidden>Cancel search</button>
+    </section>
+    <section id="results" class="results-section" aria-labelledby="results-title" hidden>
+      <div class="section-heading"><div><p class="eyebrow small">THE FIND, WITHOUT THE HUNT</p><h2 id="results-title">Your best matches.</h2><p id="results-summary" class="muted"></p></div><button id="new-search" class="quiet-button">New search ↗</button></div>
+      <div id="offer-grid" class="offer-grid"></div><button id="show-more" class="more-button" hidden>Show more finds ↓</button>
+      <details id="search-details" class="search-details"><summary>Search details & more stores <span>+</span></summary><p id="coverage-note"></p><div id="leads" class="leads"></div></details>
+    </section>
+    <section id="inspiration" class="inspiration" aria-labelledby="inspiration-title">
+      <div class="section-heading"><h2 id="inspiration-title">A little inspiration</h2><span class="muted">Start with something you love</span></div>
+      <div class="inspiration-grid">
+        <button class="inspire-card audio" data-query="Sony WH-1000XM5 headphones"><div class="inspire-copy"><span>FOR YOUR EVERYDAY</span><h3>Sound<br>good.</h3><span class="inspire-link">Find headphones <b>↗</b></span></div><img src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=440&q=80" alt="Black over-ear headphones" loading="lazy"></button>
+        <button class="inspire-card shoes" data-query="Nike Air Force 1 white"><div class="inspire-copy"><span>YOUR NEXT FAVORITE</span><h3>Step<br>into it.</h3><span class="inspire-link">Find sneakers <b>↗</b></span></div><img src="https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=440&q=80" alt="Orange sneakers" loading="lazy"></button>
+        <button class="inspire-card home" data-query="Fellow Stagg EKG kettle"><div class="inspire-copy"><span>LITTLE DAILY UPGRADES</span><h3>Make it<br>yours.</h3><span class="inspire-link">Find home essentials <b>↗</b></span></div><img src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=440&q=80" alt="Coffee brewing essentials" loading="lazy"></button>
+      </div>
+    </section>
+    <section id="saved-section" class="results-section" hidden><div class="section-heading"><div><p class="eyebrow small">KEEP THE GOOD ONES</p><h2>Saved finds.</h2></div><button id="saved-close" class="quiet-button">Back to search ↗</button></div><div id="saved-grid" class="offer-grid"></div></section>
+    <div class="bottom-note"><span class="brand-star">✳</span><p>A world of stores.<br><strong>A simpler way to shop.</strong></p></div>
+  </main>
+  <footer><a class="footer-logo" href="./">enow.</a><span>Find your thing. Keep your change.</span><button id="privacy-toggle" class="text-button">Privacy & search</button></footer>
+  <dialog id="info-dialog"><button id="dialog-close" class="dialog-close" aria-label="Close">×</button><div id="dialog-content"></div></dialog>
+  <dialog id="donation-dialog" class="donation-dialog" aria-labelledby="donation-title">
+    <button id="donation-close" class="dialog-close" aria-label="Back to shopping">×</button>
+    <div id="donation-content"></div>
+  </dialog>
+  <noscript><p class="status">Enable JavaScript to search and compare offers.</p></noscript>
+</body>
+</html>

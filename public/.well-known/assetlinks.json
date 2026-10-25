@@ -1,0 +1,1 @@
+[{"relation": ["delegate_permission/common.handle_all_urls"], "target": {"namespace": "android_app", "package_name": "app.enow.shopping", "sha256_cert_fingerprints": ["6E:D0:40:9C:6B:FC:95:1D:BA:1A:45:DD:29:26:DB:D8:B5:31:03:7D:0C:B1:F0:6E:0B:88:BD:CB:12:03:FF:3E"]}}]

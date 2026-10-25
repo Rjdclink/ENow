@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.*
+!.env.example
+build/
+*.zip
+.DS_Store
+
+native/android/build/
+src/assets.generated.mjs
+*.jks
+*.keystore
+*password*

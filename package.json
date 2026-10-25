@@ -1,0 +1,35 @@
+{
+  "name": "enow",
+  "version": "1.1.0",
+  "description": "ENow worldwide shopping discovery",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/dev.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rjdclink/ENow.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Rjdclink/ENow/issues"
+  },
+  "homepage": "https://github.com/Rjdclink/ENow#readme",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "cheerio": "^1.2.0",
+    "robots-parser": "^3.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "private": true
+}
