@@ -1,7 +1,7 @@
 import {build} from 'esbuild';
 import {mkdir,readdir,readFile} from 'node:fs/promises';
 import {join,extname} from 'node:path';
-const assets={},types={'.html':'text/html; charset=utf-8','.txt':'text/plain; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png','.apk':'application/vnd.android.package-archive'};
+const assets={},types={'.html':'text/html; charset=utf-8','.txt':'text/plain; charset=utf-8','.xml':'application/xml; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png','.apk':'application/vnd.android.package-archive'};
 async function collect(dir,prefix=''){
   for(const entry of await readdir(dir,{withFileTypes:true})){
     const path=join(dir,entry.name),url=prefix+'/'+entry.name;

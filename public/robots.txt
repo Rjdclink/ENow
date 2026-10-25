@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://enow-shopping.eager-guppy-9296.chatgpt.site/sitemap.xml
