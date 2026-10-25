@@ -20,7 +20,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public final class MainActivity extends Activity {
-  private static final String HOME="https://br-cold-moon-b41vzeae-enow.compute.c-6.us-east-2.aws.neon.tech/";
+  private static final String HOME="https://e-verse.eager-guppy-9296.chatgpt.site/";
   private WebView web;
   private LinearLayout root,bar;
   private TextView address;
@@ -34,16 +34,16 @@ public final class MainActivity extends Activity {
     getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
     root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setFitsSystemWindows(true);root.setBackgroundColor(Color.rgb(248,250,246));setContentView(root);
     bar=new LinearLayout(this);bar.setGravity(android.view.Gravity.CENTER_VERTICAL);bar.setPadding(12,4,12,4);bar.setVisibility(View.GONE);
-    Button home=new Button(this);home.setText("← ENow");home.setOnClickListener(v->web.loadUrl(HOME));bar.addView(home);
+    Button home=new Button(this);home.setText("← e-verse");home.setOnClickListener(v->web.loadUrl(HOME));bar.addView(home);
     address=new TextView(this);address.setTextColor(Color.rgb(33,91,67));address.setTextSize(12);address.setMaxLines(2);bar.addView(address,new LinearLayout.LayoutParams(0,-2,1));root.addView(bar);
     web=new WebView(this);root.addView(web,new LinearLayout.LayoutParams(-1,0,1));web.setBackgroundColor(Color.rgb(248,250,246));
-    WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(true);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);settings.setSupportMultipleWindows(true);settings.setJavaScriptCanOpenWindowsAutomatically(false);settings.setUserAgentString(settings.getUserAgentString()+" ENow/1.1.1");
+    WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(true);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);settings.setSupportMultipleWindows(true);settings.setJavaScriptCanOpenWindowsAutomatically(false);settings.setUserAgentString(settings.getUserAgentString()+" e-verse/1.2.0");
     CookieManager.getInstance().setAcceptThirdPartyCookies(web,false);
     web.setWebViewClient(new WebViewClient(){
       @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req){return navigate(req.getUrl());}
       @Override public void onPageStarted(WebView view,String url,android.graphics.Bitmap icon){updateBar(url);}
       @Override public void onPageFinished(WebView view,String url){updateBar(url);}
-      @Override public void onReceivedError(WebView view,WebResourceRequest req,WebResourceError error){if(req.isForMainFrame()){failedURL=req.getUrl().toString();new AlertDialog.Builder(MainActivity.this).setTitle("Unable to connect").setMessage("Check your internet connection, then try again.").setPositiveButton("Retry",(d,w)->web.loadUrl(failedURL)).setNegativeButton("ENow home",(d,w)->web.loadUrl(HOME)).show();}}
+      @Override public void onReceivedError(WebView view,WebResourceRequest req,WebResourceError error){if(req.isForMainFrame()){failedURL=req.getUrl().toString();new AlertDialog.Builder(MainActivity.this).setTitle("Unable to connect").setMessage("Check your internet connection, then try again.").setPositiveButton("Retry",(d,w)->web.loadUrl(failedURL)).setNegativeButton("e-verse home",(d,w)->web.loadUrl(HOME)).show();}}
       @Override public boolean onRenderProcessGone(WebView view,android.webkit.RenderProcessGoneDetail detail){root.removeView(view);view.destroy();web=null;recreate();return true;}
     });
     web.setWebChromeClient(new WebChromeClient(){

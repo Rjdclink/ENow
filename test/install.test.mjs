@@ -19,5 +19,5 @@ test('Android, Windows Edge and existing installs receive suitable instructions'
   assert.equal(installGuide({userAgent:'Mozilla/5.0 (Linux; Android 15) Chrome/140.0 Mobile Safari/537.36'}).id,'android');
   assert.equal(installGuide({userAgent:'Mozilla/5.0 (Windows NT 10.0) Chrome/140.0 Safari/537.36 Edg/140.0'}).id,'edge');
   assert.equal(installGuide({standalone:true}).id,'installed');
-  assert.equal(installGuide({userAgent:'Mozilla/5.0 Android ENow/1.1.0'}).id,'installed');
+  for(const brand of ['ENow/1.1.0','e-verse/1.2.0'])assert.equal(installGuide({userAgent:'Mozilla/5.0 Android '+brand}).id,'installed');
 });

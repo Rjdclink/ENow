@@ -22,7 +22,7 @@ sign.mkdir(parents=True,exist_ok=True);sign.chmod(0o700)
 password=sign/'password.txt';key=sign/'enow.jks'
 if not password.exists():password.write_text(secrets.token_urlsafe(32));password.chmod(0o600)
 if not key.exists():run('keytool','-genkeypair','-keystore',key,'-storepass:file',password,'-keypass:file',password,'-alias','enow','-keyalg','RSA','-keysize','3072','-validity','10000','-dname','CN=Robert Clinkenbeard, OU=ENow, O=ENow, C=US')
-out=root.parent/'ENow.apk'
+out=root.parent/'e-verse.apk'
 run('java','-jar',tools/'lib/apksigner.jar','sign','--ks',key,'--ks-pass','file:'+str(password),'--out',out,build/'aligned.apk')
 run('java','-jar',tools/'lib/apksigner.jar','verify','--verbose',out)
 print('Built',out,'bytes',out.stat().st_size)
@@ -32,5 +32,7 @@ cert=subprocess.check_output(['keytool','-exportcert','-keystore',str(key),'-sto
 fingerprint=':'.join(f'{b:02X}' for b in hashlib.sha256(cert).digest())
 well=root/'public/.well-known';well.mkdir(parents=True,exist_ok=True)
 (well/'assetlinks.json').write_text(json.dumps([{'relation':['delegate_permission/common.handle_all_urls'],'target':{'namespace':'android_app','package_name':'app.enow.shopping','sha256_cert_fingerprints':[fingerprint]}}]))
-downloads=root/'public/downloads';downloads.mkdir(exist_ok=True);shutil.copy(out,downloads/'ENow.apk')
+downloads=root/'public/downloads';downloads.mkdir(exist_ok=True);shutil.copy(out,downloads/'e-verse.apk')
+# Retain previously shared download URLs as compatibility aliases.
+shutil.copy(out,downloads/'ENow.apk')
 print('App-link certificate:',fingerprint)

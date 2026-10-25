@@ -50,7 +50,7 @@ test('AI review can reject evidence, but cannot create offers or alter prices',a
   const fetcher=async()=>Response.json({choices:[{message:{content:'{"reject_ids":["two","invented"],"price":1}'}}]});const r=await reviewMatches('A',products,{fetcher});assert.deepEqual(r.products,[products[0]]);
 });
 test('API rejects oversized and malformed queries',async()=>{
-  let r=await app.fetch(new Request('https://enow.example.com/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:'x'.repeat(241)})}));assert.equal(r.status,400);
-  r=await app.fetch(new Request('https://enow.example.com/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:'a'.repeat(16001)}));assert.equal(r.status,400);
+  let r=await app.fetch(new Request('https://e-verse.example.com/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:'x'.repeat(241)})}));assert.equal(r.status,400);
+  r=await app.fetch(new Request('https://e-verse.example.com/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:'a'.repeat(16001)}));assert.equal(r.status,400);
 });
 test('JSON worker output handles fences without executing text',()=>{assert.deepEqual(extractJSON('```json\n{"query":"shoes"}\n```'),{query:'shoes'});assert.throws(()=>extractJSON('not JSON'));});

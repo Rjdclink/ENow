@@ -5,7 +5,7 @@
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .source-credit{font-size:10px;color:var(--muted);display:inline-block;margin-top:12px;text-decoration:underline;text-underline-offset:3px}
-.about-enow{max-width:730px;margin:54px auto 0;padding:0 24px;text-align:center}.about-enow h2{font-family:Manrope,sans-serif;font-size:22px;letter-spacing:-.6px}.about-enow p{font-size:13px;line-height:1.8;color:#70816b}.about-enow a{text-decoration:underline;text-underline-offset:3px}
+.about-everse{max-width:730px;margin:54px auto 0;padding:0 24px;text-align:center}.about-everse h2{font-family:Manrope,sans-serif;font-size:22px;letter-spacing:-.6px}.about-everse p{font-size:13px;line-height:1.8;color:#70816b}.about-everse a{text-decoration:underline;text-underline-offset:3px}
 .share-site{max-width:630px;margin:0 auto 44px;padding:0 20px;text-align:center}.share-site>p{font-family:Manrope,sans-serif;font-size:16px;font-weight:600}.share-actions{display:flex;gap:10px;align-items:center;justify-content:center;margin:14px 0 10px}.share-actions input{min-width:0;flex:1;border:1px solid #d4dfce;border-radius:10px;padding:12px;background:#fff;color:var(--ink);font:11px 'DM Sans',sans-serif}.share-actions button{white-space:nowrap;flex-shrink:0;padding:12px;border:1px solid #cdddc8;border-radius:10px}.share-site>span{display:block;font-size:11px;color:#70816b;line-height:1.6}
 .offer-card{position:relative;cursor:pointer}
 .offer-card .view-offer::after{content:"";position:absolute;inset:0;z-index:1;border-radius:inherit}
@@ -38,3 +38,5 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 .app-install{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#245d43;color:white;border:1px solid #245d43;border-radius:24px;padding:12px 18px;font-size:12px;font-weight:650;white-space:nowrap;box-shadow:0 3px 12px #214b301a}.app-install:hover{background:#194832}.app-install svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}.install-dialog{max-width:470px;padding:32px}.install-logo{width:55px;height:55px;border-radius:14px}.install-dialog ol{padding-left:21px}.install-dialog li{margin:10px 0}.install-link{width:100%;font:11px 'DM Sans',sans-serif;padding:12px;border:1px solid #cdddc8;border-radius:9px;margin:0 0 13px}.install-dialog .install-note{font-size:11px;color:#84927c;margin-top:21px}@media(max-width:540px){.app-install{padding:11px 13px;font-size:11px}.app-install svg{width:17px;height:17px}.topbar nav{gap:10px}.install-dialog{padding:28px 24px}}
+
+@media(max-width:380px){.wordmark{font-size:22px;gap:7px;letter-spacing:-1.3px}.topbar{padding:0 12px}.topbar nav{gap:8px}.topbar .quiet-button{font-size:11px;gap:4px}.app-install{padding:10px 11px;gap:5px}}

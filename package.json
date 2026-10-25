@@ -1,7 +1,7 @@
 {
-  "name": "enow",
-  "version": "1.1.0",
-  "description": "ENow worldwide shopping discovery",
+  "name": "e-verse",
+  "version": "1.2.0",
+  "description": "e-verse worldwide shopping discovery",
   "directories": {
     "doc": "docs",
     "test": "test"
@@ -22,7 +22,7 @@
   "bugs": {
     "url": "https://github.com/Rjdclink/ENow/issues"
   },
-  "homepage": "https://github.com/Rjdclink/ENow#readme",
+  "homepage": "https://e-verse.eager-guppy-9296.chatgpt.site/",
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
     "cheerio": "^1.2.0",
