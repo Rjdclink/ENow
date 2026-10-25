@@ -1,6 +1,18 @@
 import {initDonations} from './donation.js';
 const $=id=>document.getElementById(id);
 const api=window.ENOW_API||'';
+// Copy a stable, public URL, without Facebook tracking parameters or app links.
+$('copy-site-link').onclick=async()=>{
+  const field=$('share-url');
+  try{
+    if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');
+    await navigator.clipboard.writeText(field.value);
+    $('share-status').textContent='Link copied. Paste it directly into your Facebook post or message.';
+  }catch{
+    field.focus();field.select();field.setSelectionRange(0,field.value.length);
+    $('share-status').textContent='Select Copy from your browser, then paste this link into your post.';
+  }
+};
 let controller=null,offers=[],expanded=false,photoToken=0;
 let saved=[];try{saved=JSON.parse(localStorage.getItem('enow-saved')||'[]');if(!Array.isArray(saved))saved=[];}catch{}
 const safeURL=u=>{try{const x=new URL(u);return x.protocol==='https:'?x.href:null;}catch{return null;}};
