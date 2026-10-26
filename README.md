@@ -4,6 +4,8 @@ Public shopping app: https://e-verse.eager-guppy-9296.chatgpt.site/
 
 Use the prominent **Install app** button for browser-managed installation on supported iPhone, iPad, Android, Windows, and Mac browsers. It opens the browser's installer when available, or shows device-specific Home Screen, Dock, or browser-menu instructions. It does not download an APK or executable. In-app browsers such as Facebook are directed to the device browser first.
 
+Every search targets Facebook Marketplace, Temu, Alibaba, eBay, Amazon, Google Shopping, Walmart, Target, Home Depot, Lowe’s, AliExpress, and Wayfair through the available public discovery index. Each marketplace receives reserved checking slots, a per-marketplace status, and a direct search link. Restricted pages stay unverified; search snippets never become offer prices. Seller microdata is supported alongside JSON-LD and OpenGraph. Samples, swatches, price ranges, installment text, and explicit bulk minimums are excluded from single-item comparisons. Fresh seller evidence supersedes older index observations.
+
 e-verse compares matching offers from discoverable stores using public seller pages, optional official retailer APIs, and dated ShopSavvy price records. Vireonix plans queries, interprets on-device photo evidence, and reviews product matches. No e-verse account is required.
 
 - Text and JPEG, PNG, WebP, GIF, AVIF, HEIC/HEIF photo search; photos stay on the device.
@@ -28,3 +30,4 @@ Automated checks cover price evidence, model/accessory mismatches, shipping, cur
 Search coverage depends on available public sources; the app does not claim to search every seller or fabricate three results when fewer can be verified. Index observations retain their source timestamps and expire after seven days. Unknown shipping and condition are shown explicitly. Merchant checkout sets final price, shipping, tax, and delivery eligibility. Vireonix and discovery providers can be temporarily unavailable.
 
 The public brand is e-verse. The existing repository, Neon function slug, Android package/signing identity, and browser storage keys remain stable for compatibility with existing deployments and installs. The current Android artifact is `public/downloads/e-verse.apk`; the prior download URL remains an alias.
+

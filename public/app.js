@@ -45,8 +45,9 @@ function showResults(data){
   const count=offers.length;
   $('results-summary').textContent=count>=3?`The lowest ${Math.min(3,count)} matching prices found · ${data.options.currency}`:data.message;
   if(!count)$('offer-grid').innerHTML='<div class="empty-state">'+escape(data.coverage.discovered?'These stores may have it. Open Search details below.':'The search sources are temporarily unavailable. Try again shortly.')+'</div>';
-  $('coverage-note').textContent=`${data.coverage.discovered} listings discovered; ${data.coverage.checked} pages checked. ${data.cached?'Results cached for up to five minutes. ':''}Coverage depends on public access. Price-index records may be up to seven days old; see each card’s source date. Prices exclude tax; unknown shipping is shown separately. Size, delivery eligibility, and final price should be checked at the store. ${data.coverage.restricted?'Some Marketplace listings require opening Facebook.':''}`;
-  $('leads').replaceChildren();for(const item of data.leads||[]){const url=safeURL(item.url);if(!url)continue;const a=document.createElement('a');a.className='lead';a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=item.title;const note=document.createElement('span');note.textContent=new URL(url).hostname+' · '+(item.status==='restricted'?'Open Marketplace to check':'Price not verified');a.append(note);$('leads').append(a);}
+  const markets=data.coverage.marketplaces||[];
+  $('coverage-note').textContent=(markets.length?markets.map(m=>m.name+': '+(m.offers?m.offers+' offers':m.restricted?'open to check':m.status==='unavailable'?'search unavailable':m.checked?'no verified price':'no indexed listings')).join(' · ')+'. ':'')+`${data.coverage.discovered} listings discovered; ${data.coverage.checked} pages checked. ${data.cached?'Results cached for up to five minutes. ':''}Coverage depends on public access. Price-index records may be up to seven days old; see each card’s source date. Prices exclude tax; unknown shipping is shown separately. Size, delivery eligibility, and final price should be checked at the store. ${data.coverage.restricted?'Some Marketplace listings require opening Facebook.':''}`;
+  $('leads').replaceChildren();for(const item of data.leads||[]){const url=safeURL(item.url);if(!url)continue;const a=document.createElement('a');a.className='lead';a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=item.title;const note=document.createElement('span');note.textContent=new URL(url).hostname+' · '+(item.status==='restricted'?'Open Marketplace to check':item.status==='marketplace_search'?'Search this marketplace':'Price not verified');a.append(note);$('leads').append(a);}
   $('search-details').open=!count;
   status(count?'':data.message,{error:false});
   $('results').scrollIntoView({behavior:'smooth',block:'start'});
@@ -113,3 +114,4 @@ document.addEventListener('paste',e=>{const file=[...e.clipboardData.items].find
 
 const openDonation=initDonations();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+

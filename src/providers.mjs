@@ -3,6 +3,7 @@ import robotsParser from 'robots-parser';
 import {getText} from './network.mjs';
 import {canonicalURL,extractProducts,extractSellerLinks,extractProductImages,productMatch} from './products.mjs';
 import {shopSavvySearch} from './shopsavvy.mjs';
+import {marketplaces,marketplaceQueries,belongsToMarket,selectCandidates} from './marketplaces.mjs';
 
 const robotsCache=new Map();
 let duckCooldown=0;
@@ -29,7 +30,7 @@ export function parseFreeSerp(data){
 }
 async function freeSerpSearch(query){
   const url=new URL('https://freeserp.ai/api.php');url.search=new URLSearchParams({index:'web',q:query,size:'40'});
-  const r=await getText(url.href,{timeout:13000,maxBytes:500000});if(r.status!==200)throw new Error('Web discovery unavailable');
+  const r=await getText(url.href,{timeout:9000,maxBytes:500000});if(r.status!==200)throw new Error('Web discovery unavailable');
   return parseFreeSerp(JSON.parse(r.text));
 }
 async function searxSearch(query){
@@ -54,7 +55,7 @@ async function ebaySearch(query,country){
 }
 async function allowedByRobots(url){
   const origin=new URL(url).origin;const cached=robotsCache.get(origin);if(cached&&cached.until>Date.now())return cached.parser?.isAllowed(url,'ENowBot')!==false;
-  try{const r=await getText(origin+'/robots.txt',{timeout:3500,maxBytes:400000});
+  try{const r=await getText(origin+'/robots.txt',{timeout:2000,maxBytes:400000});
     if(r.status===401||r.status===403||r.status===429||r.status>=500)return false;
     const parser=r.status===200?robotsParser(origin+'/robots.txt',r.text):null;
     if(robotsCache.size>250)robotsCache.clear();robotsCache.set(origin,{parser,until:Date.now()+3600000});return parser?.isAllowed(url,'ENowBot')!==false;
@@ -63,35 +64,55 @@ async function allowedByRobots(url){
 export async function checkListing(link,query,country){
   if(gated.test(new URL(link.url).hostname))return {products:[],reason:'restricted'};
   if(!await allowedByRobots(link.url))return {products:[],reason:'unavailable'};
-  try{const r=await getText(link.url,{timeout:8000});if([404,410].includes(r.status))return {products:[],reason:'gone'};if(r.status!==200||!/html|json/i.test(r.headers['content-type']||''))return {products:[],reason:'unavailable'};
+  try{const r=await getText(link.url,{timeout:6000});if([404,410].includes(r.status))return {products:[],reason:'gone'};if(r.status!==200||!/html|json/i.test(r.headers['content-type']||''))return {products:[],reason:'unavailable'};
     return {products:extractProducts(r.text,r.url,{query,country,source:link.source}),links:extractSellerLinks(r.text,r.url,query),images:extractProductImages(r.text,r.url,query),reason:'checked'};
   }catch{return {products:[],reason:'unavailable'};}
 }
 async function mapLimit(items,n,fn){const out=[];let i=0;await Promise.all(Array.from({length:Math.min(n,items.length)},async()=>{while(i<items.length){const index=i++;out[index]=await fn(items[index]);}}));return out;}
-export async function discover(query,country,{extraQueries=[]}={}){
-  const sourceStatus=[];const links=[];const products=[];
+export async function discover(query,country,{extraQueries=[],searcher,listingChecker=checkListing,catalogSearch=shopSavvySearch}={}){
+  const sourceStatus=[];const links=[];const products=[];const marketStatus=[];
+  const indexedSearch=async phrase=>{if(searcher)return searcher(phrase);try{return await freeSerpSearch(phrase);}catch{if(process.env.SEARXNG_URL)return searxSearch(phrase);if(process.env.ENABLE_DUCKDUCKGO==='1')return duckSearch(phrase,country);throw new Error('Discovery unavailable');}};
   const run=async(name,fn)=>{try{const data=await fn();sourceStatus.push({name,status:data.length?'ok':'empty',count:data.length});return data;}catch{sourceStatus.push({name,status:'unavailable',count:0});return [];}};
-  const jobs=[run('FreeSerp web index',()=>freeSerpSearch(query+' buy price')).then(x=>links.push(...x)),
-    run('FreeSerp seller discovery',()=>freeSerpSearch(query+' buy "in stock" -review -reviews')).then(x=>links.push(...x)),
-    run('ShopSavvy price index',async()=>{const found=await shopSavvySearch(query,country);links.push(...found.leads);return found.products;}).then(x=>products.push(...x))];
+  const jobs=[run('FreeSerp web index',()=>indexedSearch(query+' buy price')).then(x=>links.push(...x)),
+    run('FreeSerp seller discovery',()=>indexedSearch(query+' buy "in stock" -review -reviews')).then(x=>links.push(...x)),
+    run('ShopSavvy price index',async()=>{const found=await catalogSearch(query,country);links.push(...found.leads);return found.products;}).then(x=>products.push(...x))];
   if(process.env.EBAY_CLIENT_ID&&process.env.EBAY_CLIENT_SECRET)jobs.push(run('eBay API',()=>ebaySearch(query,country)).then(x=>products.push(...x)));
   if(process.env.SEARXNG_URL)jobs.push(run('SearXNG',()=>searxSearch(query+' buy')).then(x=>links.push(...x)));
   if(process.env.ENABLE_DUCKDUCKGO==='1')jobs.push(run('DuckDuckGo',()=>duckSearch(query+' buy price',country)).then(x=>links.push(...x)));
+  jobs.push(mapLimit(marketplaceQueries(query),6,async market=>{
+    let found=[],status='no_indexed_listings';
+    try{found=(await indexedSearch(market.query)).filter(l=>belongsToMarket(l.url,market));if(found.length)status='discovered';}catch{status='unavailable';}
+    links.push(...found.map(l=>({...l,marketplace:market.name})));
+    marketStatus.push({id:market.id,name:market.name,status,discovered:found.length,url:market.url,restricted:Boolean(market.restricted)});
+  }));
+  // Use a safe alternate only as additional discovery; verification uses the original query.
+  const alternate=extraQueries.find(q=>typeof q==='string'&&q.length<240&&productMatch(q,query)>=.8);
+  if(alternate)jobs.push(run('Alternate product discovery',()=>indexedSearch(alternate+' buy price')).then(x=>links.push(...x)));
   await Promise.all(jobs);
   // Price feeds and open web discovery both supply candidates; no store allowlist.
   links.unshift(...products.map(p=>({title:p.title,url:p.sourceURL||p.url,source:p.source,snippet:''})),...products.map(p=>({title:p.title,url:p.url,source:p.source,snippet:''})));
   const editorial=l=>/\/reviews?\/|\/news\/|\/blog\/|vs[.-]|\/face-off\/|\/headset-comparison\//i.test(l.url)||/\breviews?\b|black friday|cyber monday|lowest price ever/i.test(l.title)?1:0;
   links.sort((a,b)=>editorial(a)-editorial(b));
-  const seen=new Set();const candidates=links.filter(l=>{const host=new URL(l.url).hostname;return !excluded.test(host)&&!seen.has(l.url)&&seen.add(l.url);}).slice(0,32);
-  const checked=await mapLimit(candidates,6,l=>checkListing(l,query,country));
+  const seen=new Set();const candidates=selectCandidates(links.filter(l=>{if(!l.url)return false;const host=new URL(l.url).hostname;return !excluded.test(host)&&!seen.has(l.url)&&seen.add(l.url);}));
+  const checked=await mapLimit(candidates,12,l=>listingChecker(l,query,country));
   const follow=checked.flatMap(x=>x.links||[]).filter(x=>!seen.has(x.url)&&seen.add(x.url)).slice(0,10);
-  if(follow.length){candidates.push(...follow);checked.push(...await mapLimit(follow,6,l=>checkListing(l,query,country)));}
+  if(follow.length){candidates.push(...follow);checked.push(...await mapLimit(follow,10,l=>listingChecker(l,query,country)));}
   checked.forEach(r=>products.unshift(...r.products));
   const gone=new Set(candidates.filter((_,i)=>checked[i]?.reason==='gone').map(l=>l.url));
   for(let i=products.length-1;i>=0;i--)if(gone.has(products[i].url))products.splice(i,1);
   // Catalog pictures are attached only from the exact price record's product page.
   for(const p of products){if(!p.image&&p.sourceURL){const ix=candidates.findIndex(c=>c.url===p.sourceURL);const photo=checked[ix]?.images?.find(x=>productMatch(p.title,x.title)>=.6);if(photo){p.image=photo.image;p.imageSource='catalog';}}}
+  // Fresh seller observations replace index prices even when the new price is higher.
+  const fresh=new Set(products.filter(p=>p.verification!=='price_index').map(p=>p.url));
+  for(let i=products.length-1;i>=0;i--)if(products[i].verification==='price_index'&&fresh.has(products[i].url))products.splice(i,1);
+  for(const market of marketStatus){const definition=marketplaces.find(m=>m.id===market.id);
+    market.checked=candidates.filter((l,i)=>belongsToMarket(l.url,definition)&&checked[i]?.reason==='checked').length;
+    market.offers=products.filter(p=>belongsToMarket(p.url,definition)).length;
+    if(market.offers)market.status='offers_found';else if(market.checked)market.status='no_verified_price';
+  }
   const offerURLs=new Set(products.map(p=>p.url));
   const leads=candidates.filter((l,i)=>!offerURLs.has(l.url)).map(l=>({...l,status:gated.test(new URL(l.url).hostname)?'restricted':'price_unverified'}));
-  return {products,leads,coverage:{sources:sourceStatus,discovered:candidates.length,checked:checked.filter(x=>x.reason==='checked').length,restricted:checked.filter(x=>x.reason==='restricted').length,scope:'discoverable_web',exhaustive:false}};
+  const marketLeads=marketplaceQueries(query).map(m=>({title:'Search '+m.name,url:m.url,source:m.name,status:m.restricted?'restricted':'marketplace_search'}));
+  return {products,leads:[...marketLeads,...leads],coverage:{marketplaces:marketStatus.sort((a,b)=>marketplaces.findIndex(m=>m.id===a.id)-marketplaces.findIndex(m=>m.id===b.id)),sources:sourceStatus,discovered:candidates.length,checked:checked.filter(x=>x.reason==='checked').length,restricted:checked.filter(x=>x.reason==='restricted').length,scope:'discoverable_web',exhaustive:false}};
 }
+

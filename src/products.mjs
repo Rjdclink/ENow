@@ -5,10 +5,12 @@ import { publicURL } from './network.mjs';
 const clean=s=>String(s||'').replace(/\s+/g,' ').trim();
 export function priceNumber(value) {
   if(typeof value==='number')return Number.isFinite(value)&&value>0?value:null;
-  let s=String(value??'').replace(/[^\d.,]/g,'');
-  if(!s)return null;
+  // Reject ranges, installment text, negatives, and multiple prices instead of
+  // concatenating their digits (e.g. "$12 - $160" must never become 12160).
+  let s=String(value??'').trim().replace(/^(?:US\$|USD|CAD|AUD|EUR|GBP|[$€£¥])\s*/i,'').replace(/\s*(?:USD|CAD|AUD|EUR|GBP)$/i,'').trim();
+  if(!/^(?:\d+|\d{1,3}(?:[.,]\d{3})+)(?:[.,]\d{1,2})?$/.test(s))return null;
   if(s.includes(',')&&s.includes('.')) s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');
-  else if(/,\d{2}$/.test(s))s=s.replace(',','.');else s=s.replace(/,/g,'');
+  else if(/,\d{1,2}$/.test(s))s=s.replace(',','.');else s=s.replace(/,/g,'');
   const n=Number(s);return Number.isFinite(n)&&n>0?n:null;
 }
 export function canonicalURL(value,base) {
@@ -28,6 +30,7 @@ export function productMatch(title,query) {
   if(!significant.length)return 0;
   const model=significant.filter(x=>/\d/.test(x));
   if(model.some(x=>!ts.includes(normalize(x))))return 0;
+  if(/\b(swatch(?:es)?|samples?)\b/i.test(title)&&!/\b(swatch(?:es)?|samples?)\b/i.test(query))return 0;
   if(/\b(for parts|broken|not working)\b/i.test(title)&&!/\b(parts|broken)\b/i.test(query))return 0;
   if(/(?:^(?:\w+\s+){0,2}(?:case|cover|earpads|protector|skin|manual|strap|adapter)\b|\b(?:case|cover|earpads|replacement|protector|skin|manual|strap|adapter)\s+(?:for|compatible|fits)\b)/i.test(title)&&!/\b(case|cover|earpads|replacement|protector|parts|skin|manual|strap|adapter)\b/i.test(query))return 0;
   return significant.filter(x=>ts.includes(normalize(x))).length/significant.length;
@@ -68,6 +71,18 @@ export function extractProducts(html,url,{query,country='US',source='seller'}={}
   if(/(^|\.)shopsavvy\.com$/i.test(new URL(url).hostname))return [];
   const $=load(html);const products=[];
   $('script[type="application/ld+json"]').each((i,e)=>{try{flatten(JSON.parse($(e).text()),products);}catch{}});
+  if(!products.length)$('[itemscope][itemtype$="/Product"]').each((_,element)=>{
+    const root=$(element);
+    const own=(scope,key)=>scope.find('[itemprop="'+key+'"]').filter((_,e)=>$(e).closest('[itemscope]')[0]===scope[0]).first();
+    const value=e=>e.attr('content')||e.attr('href')||e.attr('src')||e.text();
+    const offers=[];
+    root.find('[itemscope][itemtype$="/Offer"]').each((_,offer)=>{
+      const scope=$(offer),o={'@type':'Offer'};
+      for(const key of ['price','priceCurrency','availability','url','itemCondition','priceValidUntil'])o[key]=value(own(scope,key));
+      offers.push(o);
+    });
+    products.push({'@type':'Product',name:value(own(root,'name')),image:value(own(root,'image')),url:value(own(root,'url')),offers});
+  });
   const results=[];const checkedAt=new Date().toISOString();
   for(const p of products){
     const title=clean(p.name);const match=productMatch(title,query);if(match<0.6)continue;
@@ -75,7 +90,9 @@ export function extractProducts(html,url,{query,country='US',source='seller'}={}
     offers=offers.flatMap(o=>o?.['@type']==='AggregateOffer'?(Array.isArray(o.offers)?o.offers:[]):[o]);
     for(const o of offers){if(!o)continue;
       const price=priceNumber(o.price??o.priceSpecification?.price);const money=currency(o.priceCurrency??o.priceSpecification?.priceCurrency);
-      if(!price||!money||/OutOfStock|SoldOut|Discontinued/i.test(o.availability||''))continue;
+      if(!price||!money||/OutOfStock|SoldOut|Discontinued|PreOrder/i.test(o.availability||''))continue;
+      const minimum=Number(o.eligibleQuantity?.minValue||1);if(minimum>1)continue;
+      if(/StrikethroughPrice|ListPrice|Installment/i.test(o.priceSpecification?.priceType||''))continue;
       if(o.priceValidUntil&&Date.parse(o.priceValidUntil)<Date.now()-86400000)continue;
       const link=sellerURL(o.url||p.url||url,url);if(!link)continue;
       // A comparison page is discovery evidence, not a fresh seller observation.
@@ -96,7 +113,14 @@ export function extractProducts(html,url,{query,country='US',source='seller'}={}
   }return results;
 }
 export function rankProducts(products,{currency='USD',condition='any',budget=null}={}){
-  const seen=new Set();return products.filter(p=>p.currency===currency&&(!budget||(p.total??p.price)<=budget)&&(condition==='any'||p.condition===condition)&&!seen.has(p.url)&&seen.add(p.url))
+  const preferred=new Map();
+  const quality=p=>p.verification==='seller_api'?3:p.verification==='seller_page'?2:1;
+  for(const p of products){
+    if(!p.url||!Number.isFinite(p.price)||p.price<=0||p.total!=null&&(!Number.isFinite(p.total)||p.total<p.price))continue;
+    const previous=preferred.get(p.url);
+    if(!previous||quality(p)>quality(previous)||quality(p)===quality(previous)&&Date.parse(p.checkedAt)>Date.parse(previous.checkedAt))preferred.set(p.url,p);
+  }
+  return [...preferred.values()].filter(p=>p.currency===currency&&(!budget||(p.total??p.price)<=budget)&&(condition==='any'||p.condition===condition))
   .sort((a,b)=>(a.total??a.price)-(b.total??b.price)||b.match-a.match).slice(0,30);
 }
 export function parseQuery(input){
@@ -105,3 +129,4 @@ export function parseQuery(input){
   const query=raw.replace(/^(?:please\s+)?(?:i(?:'m| am)?\s+(?:looking for|want(?: to buy)?|need)|find me|find|show me)\s+/i,'').replace(/(?:under|below|less than|up to|budget(?: of)?)\s*[$€£]?\s*\d+(?:\.\d{1,2})?/i,'').trim();
   return {query,budget:m?Number(m[1]):null};
 }
+
