@@ -123,7 +123,7 @@ export function discoveryMatches(leads,query,{currency='USD',excludeURLs=[]}={})
     const url=canonicalURL(p.url);if(!url||seen.has(url)||p.status==='marketplace_search')return false;
     if(/\/(?:reviews?|news|blog|support|manuals|account|login|register|contact)(?:[/?-]|$)/i.test(new URL(url).pathname))return false;
     const u=new URL(url);
-    if(/^(?:support|news|blog)\./i.test(u.hostname)||/\.(?:edu|gov)$/i.test(u.hostname)||/\b(review|news|case study|self.assessment)\b/i.test(p.title))return false;
+    if(/^(?:support|news|blog)\./i.test(u.hostname)||/\.(?:edu|gov)$/i.test(u.hostname)||/\b(review|news|case study|self.assessment)\b|^(?:how to|guide to)\b/i.test(p.title))return false;
     const commerce=p.source==='ShopSavvy'||p.source==='ShopSavvy catalog'||marketplaces.some(m=>belongsToMarket(url,m))||/\/(?:products?|p|pd|dp|pdp|itm|item|shop|collections?|catalog|buy|store|brands?|category|c)(?:[/?-]|$)/i.test(u.pathname)||/\b(shop|buy|sale|store)\b/i.test(p.title+' '+p.snippet)||/[-/]fx[a-z]*\d{3,}/i.test(u.pathname);
     if(!commerce||productMatch(p.title,query)<.6)return false;seen.add(url);return true;
   }).map(p=>({id:createHash('sha256').update(p.url).digest('hex').slice(0,16),title:p.title,url:canonicalURL(p.url),image:null,merchant:new URL(p.url).hostname.replace(/^www\./,''),price:null,total:null,shipping:null,currency,condition:'unspecified',availability:'unknown',verification:p.status==='catalog_search'?'catalog_search':'discovered_listing',checkedAt:null,source:p.source,match:productMatch(p.title,query)}))

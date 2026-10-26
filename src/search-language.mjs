@@ -15,6 +15,10 @@ export function languageMatch(title,query){
   const terms=[...new Set(queryWords.map(singular))];if(!terms.length)return 0;
   const titleSet=new Set(titleWords.map(singular));
   if(terms.some(w=>synonyms.get('hidden').has(w))&&!groups[0].some(w=>titleSet.has(w)))return 0;
+  if(terms.some(w=>groups[0].includes(w))&&terms.some(w=>groups[1].includes(w))){
+    const phrase=titleWords.map(singular).join(' ');
+    if(!/\b(?:hidden|secret|concealed|concealment|discreet|covert)(?:\s+[^\s]+){0,2}\s+(?:cubby|compartment|storage|stash|nook)\b|\b(?:cubby|compartment|storage|stash|nook)(?:\s+[^\s]+){0,2}\s+(?:hidden|secret|concealed|concealment|discreet|covert)\b/i.test(phrase))return 0;
+  }
   const identifiers=new Set(titleWords.map(compact));
   for(let i=0;i<titleWords.length-1;i++)identifiers.add(compact(titleWords[i]+titleWords[i+1]));
   // Model numbers and dimensions remain mandatory and cannot match by substring.

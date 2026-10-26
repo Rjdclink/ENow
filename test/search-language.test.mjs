@@ -65,3 +65,10 @@ test('shopping discovery excludes software, case studies, and unrelated flex-hea
  ];
  assert.deepEqual(discoveryMatches(leads,'FLEX tools').map(p=>p.title),['FLEX Power Tools']);
 });
+
+test('concealment must describe the compartment rather than an unrelated feature or store name',()=>{
+ assert.equal(productMatch('Sleek Modern Concealed Shower Mixer Set with Elegant Storage Solutions','hidden cubby'),0);
+ assert.equal(productMatch('Undercover Art Hidden Pattern Coloring Activity Cards | The Baby Cubby','hidden cubby'),0);
+ assert.equal(productMatch('Coffee Table with Large Hidden Storage Compartment','hidden compartments'),1);
+ assert.equal(productMatch('Portable Key Box with Secret Key Compartment','hidden cubby'),1);
+});

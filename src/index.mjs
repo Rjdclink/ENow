@@ -25,7 +25,7 @@ export default {
     const asset=serveAsset(request);if(asset)return asset;
     const path=new URL(request.url).pathname;
     if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
-    if(request.method==='GET'&&(path==='/health'||path==='/api/health'))return json({ok:true,app:'e-verse',version:'1.4.0',database:await databaseHealthy()});
+    if(request.method==='GET'&&(path==='/health'||path==='/api/health'))return json({ok:true,app:'e-verse',version:'1.4.1',database:await databaseHealthy()});
     if(request.method==='GET'&&path==='/api/status')return json({ai:{provider:'Vireonix',model:'auto',roles:['query_planning','product_match_review','photo_evidence_interpretation']},photo:{processing:'on_device',formats:['JPEG','PNG','WebP','GIF','AVIF','HEIC','HEIF']},search:{mode:'open_web_discovery',ebay_api:Boolean(process.env.EBAY_CLIENT_ID&&process.env.EBAY_CLIENT_SECRET),searxng:Boolean(process.env.SEARXNG_URL)},cost:{paid_providers:false,rate_limits:true}});
     if(request.method!=='POST'||!['/api/search','/api/photo-query'].includes(path))return json({error:'Not found'},404);
     let body;try{body=await bodyJSON(request);}catch{return json({error:'Please enter a short shopping request.'},400);}
@@ -41,7 +41,7 @@ export default {
     const country=countries.has(body.country)?body.country:'US';const currency=currencies.has(body.currency)?body.currency:'USD';const condition=['new','used','refurbished'].includes(body.condition)?body.condition:'any';
     const budget=body.budget==null||body.budget===''?parsed.budget:Number(body.budget);
     if(budget!==null&&(!Number.isFinite(budget)||budget<=0))return json({error:'Enter a valid budget.'},400);
-    const options={country,currency,condition,budget};const key=hash(JSON.stringify({v:8,query:parsed.query.toLowerCase(),...options}));
+    const options={country,currency,condition,budget};const key=hash(JSON.stringify({v:9,query:parsed.query.toLowerCase(),...options}));
     const cached=await getCached(key);if(cached)return json({...cached,cached:true});
     const start=Date.now();
     try{
