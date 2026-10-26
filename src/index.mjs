@@ -1,5 +1,5 @@
 import {discover} from './providers.mjs';
-import {rankProducts,parseQuery} from './products.mjs';
+import {rankProducts,parseQuery,discoveryMatches} from './products.mjs';
 import {planSearch,reviewMatches,worker} from './ai.mjs';
 import {getCached,saveCached,consumeLimit,databaseHealthy,hash} from './storage.mjs';
 import {serveAsset} from './static.mjs';
@@ -25,7 +25,7 @@ export default {
     const asset=serveAsset(request);if(asset)return asset;
     const path=new URL(request.url).pathname;
     if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
-    if(request.method==='GET'&&(path==='/health'||path==='/api/health'))return json({ok:true,app:'e-verse',version:'1.3.1',database:await databaseHealthy()});
+    if(request.method==='GET'&&(path==='/health'||path==='/api/health'))return json({ok:true,app:'e-verse',version:'1.4.0',database:await databaseHealthy()});
     if(request.method==='GET'&&path==='/api/status')return json({ai:{provider:'Vireonix',model:'auto',roles:['query_planning','product_match_review','photo_evidence_interpretation']},photo:{processing:'on_device',formats:['JPEG','PNG','WebP','GIF','AVIF','HEIC','HEIF']},search:{mode:'open_web_discovery',ebay_api:Boolean(process.env.EBAY_CLIENT_ID&&process.env.EBAY_CLIENT_SECRET),searxng:Boolean(process.env.SEARXNG_URL)},cost:{paid_providers:false,rate_limits:true}});
     if(request.method!=='POST'||!['/api/search','/api/photo-query'].includes(path))return json({error:'Not found'},404);
     let body;try{body=await bodyJSON(request);}catch{return json({error:'Please enter a short shopping request.'},400);}
@@ -41,7 +41,7 @@ export default {
     const country=countries.has(body.country)?body.country:'US';const currency=currencies.has(body.currency)?body.currency:'USD';const condition=['new','used','refurbished'].includes(body.condition)?body.condition:'any';
     const budget=body.budget==null||body.budget===''?parsed.budget:Number(body.budget);
     if(budget!==null&&(!Number.isFinite(budget)||budget<=0))return json({error:'Enter a valid budget.'},400);
-    const options={country,currency,condition,budget};const key=hash(JSON.stringify({v:7,query:parsed.query.toLowerCase(),...options}));
+    const options={country,currency,condition,budget};const key=hash(JSON.stringify({v:8,query:parsed.query.toLowerCase(),...options}));
     const cached=await getCached(key);if(cached)return json({...cached,cached:true});
     const start=Date.now();
     try{
@@ -50,8 +50,9 @@ export default {
       const ranked=rankProducts(found.products,options);
       const reviewed=await reviewMatches(parsed.query,ranked);
       const results=reviewed.products.slice(0,12);
-      const payload={query:parsed.query,options,results,leads:found.leads.slice(0,40),coverage:found.coverage,ai:{provider:'Vireonix',planning:plan.status,review:reviewed.status},checkedAt:new Date().toISOString(),durationMs:Date.now()-start,cached:false,comparison:results.every(p=>p.total!==null)?'price_plus_shipping':'listed_price_with_available_shipping',message:results.length>=3?'Lowest matching prices found':results.length?`Found ${results.length} source-backed ${results.length===1?'offer':'offers'}. More stores are listed below.`:'No matching prices could be checked. You can explore the stores found below.'};
-      if(found.coverage.discovered||results.length)await saveCached(key,payload);
+      const matches=discoveryMatches(found.leads,parsed.query,{currency,excludeURLs:results.map(p=>p.url)});
+      const payload={query:parsed.query,options,results,matches,leads:found.leads.slice(0,40),coverage:found.coverage,ai:{provider:'Vireonix',planning:plan.status,review:reviewed.status},checkedAt:new Date().toISOString(),durationMs:Date.now()-start,cached:false,comparison:results.every(p=>p.total!==null)?'price_plus_shipping':'listed_price_with_available_shipping',message:results.length>=3?'Lowest matching prices found':results.length?`Found ${results.length} source-backed ${results.length===1?'offer':'offers'}. More stores are listed below.`:matches.length?`Found ${matches.length} matching listings. Open a listing to check its current price.`:'No matching listings were found in the available sources. Try a model number or another description.'};
+      if(found.coverage.discovered||results.length||matches.length)await saveCached(key,payload);
       return json(payload);
     }catch{return json({error:'The search could not finish. Please try again.',code:'search_unavailable'},503);}
   }

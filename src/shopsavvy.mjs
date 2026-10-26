@@ -1,18 +1,19 @@
 import {createHash} from 'node:crypto';
 import {canonicalURL,productMatch,priceNumber} from './products.mjs';
-import {consumeLimit} from './storage.mjs';
+import {consumeLimit,getCached,saveCached,hash} from './storage.mjs';
 
 let cooldown=0;
 async function call(name,args){
-  if(Date.now()<cooldown||!await consumeLimit('shopsavvy-minute',8,60)||!await consumeLimit('shopsavvy-hour',80,3600))throw new Error('Price source busy');
+  const key='catalog:'+hash(JSON.stringify({name,args}));const cached=await getCached(key);if(typeof cached==='string')return cached;
+  if(Date.now()<cooldown||!await consumeLimit('shopsavvy-minute',10,60)||!await consumeLimit('shopsavvy-hour',100,3600))throw new Error('Price source busy');
   const r=await fetch('https://api.shopsavvy.com/mcp',{method:'POST',headers:{'content-type':'application/json',accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name,arguments:args}}),signal:AbortSignal.timeout(18000)});
   if(r.status===429){cooldown=Date.now()+60000;throw new Error('Price source busy');}if(!r.ok)throw new Error('Price source unavailable');
   const reader=r.body.getReader();let bytes=0,text='';const decoder=new TextDecoder();while(true){const {value,done}=await reader.read();if(done)break;bytes+=value.length;if(bytes>2000000){await reader.cancel();throw new Error('Response too large');}text+=decoder.decode(value,{stream:true});}text+=decoder.decode();
   const data=JSON.parse(text.startsWith('event:')||text.startsWith('data:')?text.split('\n').filter(x=>x.startsWith('data:')).map(x=>x.slice(5).trim()).join(''):text);
-  if(data.error||data.result?.isError)throw new Error('Price source unavailable');return (data.result?.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('\n');
+  if(data.error||data.result?.isError){if(/rate limit/i.test(JSON.stringify(data)))cooldown=Date.now()+60000;throw new Error('Price source unavailable');}const result=(data.result?.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('\n');if(result)await saveCached(key,result);return result;
 }
 export function parseCatalog(text,query){
-  return [...text.matchAll(/^### \d+\. (.+)\n([\s\S]*?)(?=^### |\*\*Usage:|(?![\s\S]))/gm)].map(m=>({title:m[1],identifier:m[2].match(/^- Path: (products\/[^\s]+)/m)?.[1]})).filter(p=>p.identifier&&productMatch(p.title,query)>=.6);
+  return [...text.matchAll(/^### \d+\. (.+)\n([\s\S]*?)(?=^### |\*\*Usage:|(?![\s\S]))/gm)].map(m=>{const asin=m[2].match(/^- ASIN: ([A-Z0-9]{10})\s*$/m)?.[1];return {title:m[1],identifier:m[2].match(/^- Path: (products\/[^\s]+)/m)?.[1],url:asin?'https://www.amazon.com/dp/'+asin:null};}).filter(p=>p.identifier&&productMatch(p.title,query)>=.6);
 }
 export function parseOffers(text,query,{now=Date.now()}={}){
   const title=text.match(/^## .+? Current Offers for (.+)$/m)?.[1]||'';
@@ -25,14 +26,16 @@ export function parseOffers(text,query,{now=Date.now()}={}){
   records.sort((a,b)=>Date.parse(b.checkedAt)-Date.parse(a.checkedAt));const seen=new Set();const latest=records.filter(p=>{const k=p.url+'|'+(p.seller||'')+'|'+p.condition;return !seen.has(k)&&seen.add(k);});
   const products=[],leads=[];
   for(const p of latest){if(p.stock!=='in')continue;const age=now-Date.parse(p.checkedAt);
-    if(age>7*86400000){if(age<30*86400000)leads.push({title,url:p.url,snippet:'Older price record; needs a live check',source:'ShopSavvy'});continue;}
+    if(age>7*86400000){leads.push({title,url:p.url,snippet:'Older price record; needs a live check',source:'ShopSavvy'});continue;}
     products.push({id:createHash('sha256').update(p.url+'|'+p.seller+'|'+p.condition).digest('hex').slice(0,16),title,url:p.url,image:null,merchant:p.retailer+(p.seller?' · '+p.seller:''),price:p.price,currency:'USD',shipping:null,total:null,condition:['new','used','refurbished'].includes(p.condition)?p.condition:'unspecified',availability:'in_stock',verification:'price_index',checkedAt:p.checkedAt,source:'ShopSavvy',sourceURL,match});
   }return {products,leads};
 }
 export async function shopSavvySearch(query,country){
   // The free MCP's documented prices are US dollars; do not imply local delivery elsewhere.
   if(country!=='US')return {products:[],leads:[]};
-  const catalog=parseCatalog(await call('product_search',{query,limit:5}),query).slice(0,3);
-  const results=await Promise.allSettled(catalog.map(p=>call('product_offers',{identifier:p.identifier}).then(t=>parseOffers(t,query))));
-  return results.reduce((out,r)=>{if(r.status==='fulfilled'){out.products.push(...r.value.products);out.leads.push(...r.value.leads);}return out;},{products:[],leads:[]});
+  const catalog=parseCatalog(await call('product_search',{query,limit:12}),query).slice(0,12);
+  const catalogLeads=catalog.map(p=>({title:p.title,url:p.url||'https://www.google.com/search?tbm=shop&q='+encodeURIComponent(p.title),source:'ShopSavvy catalog',status:p.url?'price_unverified':'catalog_search',snippet:'Matching catalog item; check current price at seller'}));
+  const results=await Promise.allSettled(catalog.slice(0,2).map(p=>call('product_offers',{identifier:p.identifier}).then(t=>parseOffers(t,query))));
+  return results.reduce((out,r)=>{if(r.status==='fulfilled'){out.products.push(...r.value.products);out.leads.push(...r.value.leads);}return out;},{products:[],leads:catalogLeads});
 }
+

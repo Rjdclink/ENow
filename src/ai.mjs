@@ -1,3 +1,4 @@
+import {searchPhrases} from './search-language.mjs';
 const endpoint='https://vireonix.ai/v1/chat/completions';
 let cooldown=0;
 export function extractJSON(text){
@@ -16,13 +17,14 @@ export async function worker(task,input,{fetcher=fetch,timeout=12000}={}){
   return extractJSON((await r.json())?.choices?.[0]?.message?.content);
 }
 export async function planSearch(query,options={}){
-  try{const p=await worker('plan',{query},options);const alternates=Array.isArray(p.alternates)?p.alternates.filter(s=>typeof s==='string'&&s.length<240).slice(0,1):[];
+  try{const p=await worker('plan',{query},{timeout:4500,...options});const alternates=Array.isArray(p.alternates)?p.alternates.filter(s=>typeof s==='string'&&s.length<240).slice(0,2):[];
     // Original user query remains authoritative; the model can add a search phrase only.
-    return {query,extraQueries:alternates,status:'active'};
-  }catch{return {query,extraQueries:[],status:'unavailable'};}
+    return {query,extraQueries:searchPhrases(query,alternates).slice(1),status:'active'};
+  }catch{return {query,extraQueries:searchPhrases(query).slice(1),status:'unavailable'};}
 }
 export async function reviewMatches(query,products,options={}){
   if(!products.length)return {products,status:'not_needed'};
-  try{const r=await worker('matching',{query,products:products.slice(0,24).map(p=>({id:p.id,title:p.title,condition:p.condition}))},options);if(!Array.isArray(r.reject_ids))throw new Error('Invalid review');const ids=new Set(r.reject_ids.filter(x=>typeof x==='string'));return {products:products.filter(p=>!ids.has(p.id)),status:'active'};
+  try{const r=await worker('matching',{query,products:products.slice(0,24).map(p=>({id:p.id,title:p.title,condition:p.condition}))},{timeout:4500,...options});if(!Array.isArray(r.reject_ids))throw new Error('Invalid review');const ids=new Set(r.reject_ids.filter(x=>typeof x==='string'));return {products:products.filter(p=>!ids.has(p.id)),status:'active'};
   }catch{return {products,status:'unavailable'};}
 }
+

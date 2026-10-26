@@ -1,6 +1,8 @@
 import { load } from 'cheerio/slim';
 import { createHash } from 'node:crypto';
 import { publicURL } from './network.mjs';
+import {languageMatch} from './search-language.mjs';
+import {marketplaces,belongsToMarket} from './marketplaces.mjs';
 
 const clean=s=>String(s||'').replace(/\s+/g,' ').trim();
 export function priceNumber(value) {
@@ -22,18 +24,10 @@ export function sellerURL(value,base){
   return cleaned;
 }
 export function productMatch(title,query) {
-  const normalize=s=>s.toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]/gu,'');
-  const ts=normalize(title);
-  const tokens=query.toLowerCase().match(/[\p{L}\p{N}][\p{L}\p{N}-]*/gu)||[];
-  const ignore=new Set(['i','a','an','the','for','to','buy','find','me','want','looking','please','cheap','cheapest','price','online','new','used','refurbished','under','less','than','with','and']);
-  const significant=tokens.filter(x=>(x.length>1||/\d/.test(x))&&!ignore.has(x));
-  if(!significant.length)return 0;
-  const model=significant.filter(x=>/\d/.test(x));
-  if(model.some(x=>!ts.includes(normalize(x))))return 0;
   if(/\b(swatch(?:es)?|samples?)\b/i.test(title)&&!/\b(swatch(?:es)?|samples?)\b/i.test(query))return 0;
   if(/\b(for parts|broken|not working)\b/i.test(title)&&!/\b(parts|broken)\b/i.test(query))return 0;
   if(/(?:^(?:\w+\s+){0,2}(?:case|cover|earpads|protector|skin|manual|strap|adapter|switch|motor|bracket|cord|chain|wand|cleaner|slat|clip|mount|repair)\b|\b(?:case|cover|earpads|replacement|protector|skin|manual|strap|adapter|switch|motor|bracket|cord|chain|wand|cleaner|slat|clip|mount|repair)\s+(?:for|compatible|fits)\b)/i.test(title)&&!/\b(case|cover|earpads|replacement|protector|parts|skin|manual|strap|adapter|switch|motor|bracket|cord|chain|wand|cleaner|slat|clip|mount|repair)\b/i.test(query))return 0;
-  return significant.filter(x=>ts.includes(normalize(x))).length/significant.length;
+  return languageMatch(title,query);
 }
 function flatten(value,out=[],depth=0) {
   if(depth>10||!value||typeof value!=='object')return out;
@@ -122,6 +116,18 @@ export function rankProducts(products,{currency='USD',condition='any',budget=nul
   }
   return [...preferred.values()].filter(p=>p.currency===currency&&(!budget||(p.total??p.price)<=budget)&&(condition==='any'||p.condition===condition))
   .sort((a,b)=>(a.total??a.price)-(b.total??b.price)||b.match-a.match).slice(0,30);
+}
+export function discoveryMatches(leads,query,{currency='USD',excludeURLs=[]}={}){
+  const seen=new Set(excludeURLs);
+  return leads.filter(p=>{
+    const url=canonicalURL(p.url);if(!url||seen.has(url)||p.status==='marketplace_search')return false;
+    if(/\/(?:reviews?|news|blog|support|manuals|account|login|register|contact)(?:[/?-]|$)/i.test(new URL(url).pathname))return false;
+    const u=new URL(url);
+    if(/^(?:support|news|blog)\./i.test(u.hostname)||/\.(?:edu|gov)$/i.test(u.hostname)||/\b(review|news|case study|self.assessment)\b/i.test(p.title))return false;
+    const commerce=p.source==='ShopSavvy'||p.source==='ShopSavvy catalog'||marketplaces.some(m=>belongsToMarket(url,m))||/\/(?:products?|p|pd|dp|pdp|itm|item|shop|collections?|catalog|buy|store|brands?|category|c)(?:[/?-]|$)/i.test(u.pathname)||/\b(shop|buy|sale|store)\b/i.test(p.title+' '+p.snippet)||/[-/]fx[a-z]*\d{3,}/i.test(u.pathname);
+    if(!commerce||productMatch(p.title,query)<.6)return false;seen.add(url);return true;
+  }).map(p=>({id:createHash('sha256').update(p.url).digest('hex').slice(0,16),title:p.title,url:canonicalURL(p.url),image:null,merchant:new URL(p.url).hostname.replace(/^www\./,''),price:null,total:null,shipping:null,currency,condition:'unspecified',availability:'unknown',verification:p.status==='catalog_search'?'catalog_search':'discovered_listing',checkedAt:null,source:p.source,match:productMatch(p.title,query)}))
+  .sort((a,b)=>b.match-a.match).slice(0,24);
 }
 export function parseQuery(input){
   const raw=clean(input).slice(0,240);

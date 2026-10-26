@@ -2,6 +2,7 @@ import {load} from 'cheerio/slim';
 import robotsParser from 'robots-parser';
 import {getText} from './network.mjs';
 import {canonicalURL,extractProducts,extractSellerLinks,extractProductImages,productMatch} from './products.mjs';
+import {searchPhrases} from './search-language.mjs';
 import {shopSavvySearch} from './shopsavvy.mjs';
 import {marketplaces,marketplaceQueries,belongsToMarket,selectCandidates} from './marketplaces.mjs';
 
@@ -73,8 +74,8 @@ export async function discover(query,country,{extraQueries=[],searcher,listingCh
   const sourceStatus=[];const links=[];const products=[];const marketStatus=[];
   const indexedSearch=async phrase=>{if(searcher)return searcher(phrase);try{return await freeSerpSearch(phrase);}catch{if(process.env.SEARXNG_URL)return searxSearch(phrase);if(process.env.ENABLE_DUCKDUCKGO==='1')return duckSearch(phrase,country);throw new Error('Discovery unavailable');}};
   const run=async(name,fn)=>{try{const data=await fn();sourceStatus.push({name,status:data.length?'ok':'empty',count:data.length});return data;}catch{sourceStatus.push({name,status:'unavailable',count:0});return [];}};
-  const jobs=[run('FreeSerp web index',()=>indexedSearch(query+' buy price')).then(x=>links.push(...x)),
-    run('FreeSerp seller discovery',()=>indexedSearch(query+' buy "in stock" -review -reviews')).then(x=>links.push(...x)),
+  const jobs=[run('Open web discovery',()=>indexedSearch(query)).then(x=>links.push(...x)),
+    run('Seller discovery',()=>indexedSearch(query+' buy')).then(x=>links.push(...x)),
     run('ShopSavvy price index',async()=>{const found=await catalogSearch(query,country);links.push(...found.leads);return found.products;}).then(x=>products.push(...x))];
   if(process.env.EBAY_CLIENT_ID&&process.env.EBAY_CLIENT_SECRET)jobs.push(run('eBay API',()=>ebaySearch(query,country)).then(x=>products.push(...x)));
   if(process.env.SEARXNG_URL)jobs.push(run('SearXNG',()=>searxSearch(query+' buy')).then(x=>links.push(...x)));
@@ -86,14 +87,14 @@ export async function discover(query,country,{extraQueries=[],searcher,listingCh
     marketStatus.push({id:market.id,name:market.name,status,discovered:found.length,url:market.url,restricted:Boolean(market.restricted)});
   }));
   // Use a safe alternate only as additional discovery; verification uses the original query.
-  const alternate=extraQueries.find(q=>typeof q==='string'&&q.length<240&&productMatch(q,query)>=.8);
-  if(alternate)jobs.push(run('Alternate product discovery',()=>indexedSearch(alternate+' buy price')).then(x=>links.push(...x)));
+  const phrases=searchPhrases(query,extraQueries);
+  for(const phrase of phrases.slice(1))jobs.push(run('Related wording discovery',()=>indexedSearch(phrase)).then(x=>links.push(...x)));
   await Promise.all(jobs);
   // Price feeds and open web discovery both supply candidates; no store allowlist.
   links.unshift(...products.map(p=>({title:p.title,url:p.sourceURL||p.url,source:p.source,snippet:''})),...products.map(p=>({title:p.title,url:p.url,source:p.source,snippet:''})));
   const editorial=l=>/\/reviews?\/|\/news\/|\/blog\/|vs[.-]|\/face-off\/|\/headset-comparison\//i.test(l.url)||/\breviews?\b|black friday|cyber monday|lowest price ever/i.test(l.title)?1:0;
-  links.sort((a,b)=>editorial(a)-editorial(b));
-  const seen=new Set();const candidates=selectCandidates(links.filter(l=>{if(!l.url)return false;const host=new URL(l.url).hostname;return !excluded.test(host)&&!seen.has(l.url)&&seen.add(l.url);}));
+  links.sort((a,b)=>editorial(a)-editorial(b)||productMatch(b.title,query)-productMatch(a.title,query));
+  const seen=new Set();const candidates=selectCandidates(links.filter(l=>{if(!l.url)return false;const host=new URL(l.url).hostname;return l.status!=='catalog_search'&&!excluded.test(host)&&!seen.has(l.url)&&seen.add(l.url);}));
   const checked=await mapLimit(candidates,12,l=>listingChecker(l,query,country));
   const follow=checked.flatMap(x=>x.links||[]).filter(x=>!seen.has(x.url)&&seen.add(x.url)).slice(0,10);
   if(follow.length){candidates.push(...follow);checked.push(...await mapLimit(follow,10,l=>listingChecker(l,query,country)));}
@@ -111,8 +112,8 @@ export async function discover(query,country,{extraQueries=[],searcher,listingCh
     if(market.offers)market.status='offers_found';else if(market.checked)market.status='no_verified_price';
   }
   const offerURLs=new Set(products.map(p=>p.url));
-  const leads=candidates.filter((l,i)=>!offerURLs.has(l.url)).map(l=>({...l,status:gated.test(new URL(l.url).hostname)?'restricted':'price_unverified'}));
+  const leads=[...links.filter(l=>l.status==='catalog_search'),...candidates.filter((l,i)=>!offerURLs.has(l.url)&&checked[i]?.reason!=='gone')].map(l=>({...l,status:l.status==='catalog_search'?'catalog_search':gated.test(new URL(l.url).hostname)?'restricted':'price_unverified'}));
   const marketLeads=marketplaceQueries(query).map(m=>({title:'Search '+m.name,url:m.url,source:m.name,status:m.restricted?'restricted':'marketplace_search'}));
-  return {products,leads:[...marketLeads,...leads],coverage:{marketplaces:marketStatus.sort((a,b)=>marketplaces.findIndex(m=>m.id===a.id)-marketplaces.findIndex(m=>m.id===b.id)),sources:sourceStatus,discovered:candidates.length,checked:checked.filter(x=>x.reason==='checked').length,restricted:checked.filter(x=>x.reason==='restricted').length,scope:'discoverable_web',exhaustive:false}};
+  return {products,leads:[...marketLeads,...leads],coverage:{searchPhrases:phrases,marketplaces:marketStatus.sort((a,b)=>marketplaces.findIndex(m=>m.id===a.id)-marketplaces.findIndex(m=>m.id===b.id)),sources:sourceStatus,discovered:candidates.length,checked:checked.filter(x=>x.reason==='checked').length,restricted:checked.filter(x=>x.reason==='restricted').length,scope:'discoverable_web',exhaustive:false}};
 }
 
