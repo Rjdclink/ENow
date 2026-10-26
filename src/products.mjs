@@ -32,7 +32,7 @@ export function productMatch(title,query) {
   if(model.some(x=>!ts.includes(normalize(x))))return 0;
   if(/\b(swatch(?:es)?|samples?)\b/i.test(title)&&!/\b(swatch(?:es)?|samples?)\b/i.test(query))return 0;
   if(/\b(for parts|broken|not working)\b/i.test(title)&&!/\b(parts|broken)\b/i.test(query))return 0;
-  if(/(?:^(?:\w+\s+){0,2}(?:case|cover|earpads|protector|skin|manual|strap|adapter)\b|\b(?:case|cover|earpads|replacement|protector|skin|manual|strap|adapter)\s+(?:for|compatible|fits)\b)/i.test(title)&&!/\b(case|cover|earpads|replacement|protector|parts|skin|manual|strap|adapter)\b/i.test(query))return 0;
+  if(/(?:^(?:\w+\s+){0,2}(?:case|cover|earpads|protector|skin|manual|strap|adapter|switch|motor|bracket|cord|chain|wand|cleaner|slat|clip|mount|repair)\b|\b(?:case|cover|earpads|replacement|protector|skin|manual|strap|adapter|switch|motor|bracket|cord|chain|wand|cleaner|slat|clip|mount|repair)\s+(?:for|compatible|fits)\b)/i.test(title)&&!/\b(case|cover|earpads|replacement|protector|parts|skin|manual|strap|adapter|switch|motor|bracket|cord|chain|wand|cleaner|slat|clip|mount|repair)\b/i.test(query))return 0;
   return significant.filter(x=>ts.includes(normalize(x))).length/significant.length;
 }
 function flatten(value,out=[],depth=0) {

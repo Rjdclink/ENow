@@ -52,3 +52,10 @@ test('blinds samples and swatches cannot outrank complete blinds',()=>{
   assert.equal(productMatch('White blinds sample','blinds'),0);
   assert.equal(productMatch('Mini blinds swatch','blinds swatch'),1);
 });
+
+test('blinds control switches do not masquerade as complete blinds',()=>{
+  const title='Tubular Motor Ready WiFi Bluetooth Curtain Switch for Smart Roller Blinds';
+  assert.equal(productMatch(title,'blinds'),0);
+  assert.ok(productMatch(title,'blinds switch')>=.6);
+  assert.equal(productMatch('Motorized smart roller blinds','blinds'),1);
+});
